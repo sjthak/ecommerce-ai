@@ -21,3 +21,6 @@ app.include_router(chat.router,   prefix="/chat",   tags=["Chat"])
 @app.get("/")
 def root():
     return {"status": "AI Service is running 🚀"}
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
