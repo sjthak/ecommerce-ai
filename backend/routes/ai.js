@@ -1,40 +1,29 @@
 const router = require("express").Router();
 const axios = require("axios");
-require("dotenv").config();
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL;
+const AI_URL = process.env.AI_SERVICE_URL;
 
-// POST /api/ai/chat
 router.post("/chat", async (req, res) => {
   try {
-    const { message, history = [] } = req.body;
-
-    const response = await axios.post(`${AI_SERVICE_URL}/chat/`, {
-      message,
-      history
+    const response = await axios.post(`${AI_URL}/chat/`, req.body, {
+      timeout: 60000  // เพิ่ม timeout เป็น 60 วินาที เผื่อ cold start
     });
-
     res.json(response.data);
-
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error("AI chat error:", err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 
-// POST /api/ai/search
 router.post("/search", async (req, res) => {
   try {
-    const { query, limit = 5 } = req.body;
-
-    const response = await axios.post(`${AI_SERVICE_URL}/search/`, {
-      query,
-      limit
+    const response = await axios.post(`${AI_URL}/search/`, req.body, {
+      timeout: 60000
     });
-
     res.json(response.data);
-
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error("AI search error:", err.message);
+    res.status(500).json({ message: err.message });
   }
 });
 
