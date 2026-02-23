@@ -6,7 +6,7 @@ const AI_URL = process.env.AI_SERVICE_URL;
 router.post("/chat", async (req, res) => {
   try {
     const response = await axios.post(`${AI_URL}/chat/`, req.body, {
-      timeout: 60000  // เพิ่ม timeout เป็น 60 วินาที เผื่อ cold start
+      timeout: 100000  // เพิ่ม timeout เป็น 60 วินาที เผื่อ cold start
     });
     res.json(response.data);
   } catch (err) {
@@ -18,7 +18,7 @@ router.post("/chat", async (req, res) => {
 router.post("/search", async (req, res) => {
   try {
     const response = await axios.post(`${AI_URL}/search/`, req.body, {
-      timeout: 60000
+      timeout: 100000
     });
     res.json(response.data);
   } catch (err) {
