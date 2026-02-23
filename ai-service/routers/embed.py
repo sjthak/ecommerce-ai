@@ -1,20 +1,26 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from sentence_transformers import SentenceTransformer
 from pymongo import MongoClient
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 router = APIRouter()
 
-# โหลด embedding model (รองรับภาษาไทย)
-model = SentenceTransformer("BAAI/bge-m3")
+_model = None
 
-# เชื่อมต่อ MongoDB
+def get_model():
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer("BAAI/bge-m3")
+    return _model
+
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client["ecommerce"]
 collection = db["products"]
 
-# โครงสร้างข้อมูลสินค้า
 class Product(BaseModel):
     id: str
     name: str
@@ -25,20 +31,14 @@ class Product(BaseModel):
 class ProductList(BaseModel):
     products: list[Product]
 
-
 @router.post("/products")
 async def embed_products(data: ProductList):
     try:
         embedded_count = 0
-
         for product in data.products:
-            # รวมข้อมูลสินค้าเป็น text เดียว
             text = f"{product.name} {product.description} {product.category}"
+            vector = get_model().encode(text).tolist()
 
-            # แปลงเป็น vector
-            vector = model.encode(text).tolist()
-
-            # บันทึกลง MongoDB พร้อม vector
             collection.update_one(
                 {"id": product.id},
                 {"$set": {
@@ -53,15 +53,10 @@ async def embed_products(data: ProductList):
             )
             embedded_count += 1
 
-        return {
-            "success": True,
-            "embedded": embedded_count,
-            "message": f"Embedded {embedded_count} products เรียบร้อย"
-        }
+        return {"success": True, "embedded": embedded_count}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/status")
 async def embed_status():

@@ -8,7 +8,6 @@ load_dotenv()
 
 router = APIRouter()
 
-# Lazy load — โหลดเมื่อมีการเรียกใช้ครั้งแรก
 _model = None
 
 def get_model():
@@ -29,8 +28,7 @@ class SearchRequest(BaseModel):
 @router.post("/")
 async def search_products(req: SearchRequest):
     try:
-        model = get_model()
-        query_vector = model.encode(req.query).tolist()
+        query_vector = get_model().encode(req.query).tolist()
 
         results = collection.aggregate([
             {
