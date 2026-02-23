@@ -1,14 +1,22 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from sentence_transformers import SentenceTransformer
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
+
 router = APIRouter()
 
-model = SentenceTransformer("BAAI/bge-m3")
+# Lazy load — โหลดเมื่อมีการเรียกใช้ครั้งแรก
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer("BAAI/bge-m3")
+    return _model
 
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client["ecommerce"]
@@ -18,10 +26,10 @@ class SearchRequest(BaseModel):
     query: str
     limit: int = 5
 
-
 @router.post("/")
 async def search_products(req: SearchRequest):
     try:
+        model = get_model()
         query_vector = model.encode(req.query).tolist()
 
         results = collection.aggregate([
@@ -34,19 +42,13 @@ async def search_products(req: SearchRequest):
                     "limit": req.limit
                 }
             },
-            {
-                "$project": {
-                    "_id": 0,
-                    "embedding": 0
-                }
-            }
+            {"$project": {"_id": 0, "embedding": 0}}
         ])
 
-        products = list(results)
         return {
             "success": True,
             "query": req.query,
-            "results": products
+            "results": list(results)
         }
 
     except Exception as e:

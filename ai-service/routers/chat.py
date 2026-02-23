@@ -11,7 +11,14 @@ load_dotenv()
 
 router = APIRouter()
 
-model = SentenceTransformer("BAAI/bge-m3")
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer("BAAI/bge-m3")
+    return _model
 
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client["ecommerce"]
@@ -66,7 +73,7 @@ def extract_preferences(history: list):
 
 
 def search_products(query: str, limit: int = 5, min_price: float = None, max_price: float = None):
-    query_vector = model.encode(query).tolist()
+    query_vector = get_model().encode(query).tolist()
 
     pipeline = [
         {
