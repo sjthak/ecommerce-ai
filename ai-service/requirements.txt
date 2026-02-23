@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+groq
+pymongo
+sentence-transformers
+python-dotenv
+httpx
+pydantic
